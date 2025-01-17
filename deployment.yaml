@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atena-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: atena-api
+  template:
+    metadata:
+      labels:
+        app: atena-api
+    spec:
+      hostNetwork: true  # Garante que o pod compartilhe a rede do host
+      containers:
+      - name: atena-api
+        image: atena-api:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000  # Uvicorn
+          name: uvicorn-port
+        - containerPort: 9000  # MinIO
+          name: minio-port
+        - containerPort: 4040  # Spark UI
+          name: spark-ui-port
+        - containerPort: 7079  # Spark BlockManager
+          name: spark-bm-port
+        env:
+          - name: DELTALAKE_PATH
+            value: "s3a://delta/tables/bh"
+          - name: CONTAGEM_TABLE_NAME
+            value: "/contagem/silver"
+          - name: INFRACAO_TABLE_NAME
+            value: "/infracao/bronze"
+          - name: MINIO_ENDPOINT
+            value: "http://192.168.1.175:9000"
+          - name: MINIO_ACCESS_KEY
+            value: "caXFVVCCt2WkEZeeejoX"
+          - name: MINIO_SECRET_KEY
+            value: "o6dPOOG1L4I8spjVicyU6qfNH9NEv2Y2TymWNRLo"
+          - name: REPORT_HEADER_1
+            value: "TIVIC - Tecnologia, InovaÃ§Ã£o e InformaÃ§Ã£o"
+          - name: REPORT_LOGO
+            value: "app/assets/images/logo.png"
+          - name: GEO_PATH
+            value: "app/assets/geo"
+          - name: PYSPARK_PYTHON
+            value: "/usr/local/bin/python"
+          - name: PYSPARK_DRIVER_PYTHON
+            value: "python"
+          - name: SPARK_LOCAL_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: SPARK_DRIVER_BIND_ADDRESS
+            value: "0.0.0.0"
+          - name: SPARK_BLOCKMANAGER_PORT
+            value: "7079"
+        resources:
+          requests:
+            cpu: "1Gi"
+            memory: "2Gi"
+          limits:
+            cpu: "2Gi"
+            memory: "4Gi"
